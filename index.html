@@ -189,7 +189,7 @@
                 saveAll(); 
                 renderGrid();
 
-                // 🌟 觸發鼓勵訊息的邏輯 🌟
+                // 🌟 觸發鼓勵訊息的邏輯（已修改為純鼓勵版本） 🌟
                 if (isChecking) {
                     if (data[currentTabName].length === count) {
                         // 全班完成
@@ -198,7 +198,7 @@
                     } else {
                         // 個人完成
                         const randomIndMsg = individualMsgs[Math.floor(Math.random() * individualMsgs.length)];
-                        showToast(`${i}號同學，${randomIndMsg}`);
+                        showToast(randomIndMsg);
                     }
                 }
             };
