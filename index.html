@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每日任務追蹤系統</title>
+    <title>六年級專屬 每日任務儀表板</title>
     <style>
         :root {
             --primary: #8d6e63; --success: #6b8e23; --bg: #f5f5dc;
@@ -27,11 +27,34 @@
         .info-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: #fafaf5; padding: 15px 25px; border-radius: 12px; border: 1px solid #eee; }
         input, select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
         .btn-action { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+
+        /* 🌟 彈出鼓勵訊息的樣式 🌟 */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--success);
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 12px 24px;
+            position: fixed;
+            z-index: 1000;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.4s, bottom 0.4s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        #toast.celebrate { background-color: #ff9800; font-size: 26px; padding: 20px 40px; border: 3px solid #fff; }
     </style>
 </head>
 <body>
 
-<div class="header"><h1>💪 每日任務管理</h1></div>
+<div class="header"><h1>👑 每日任務儀表板</h1></div>
 
 <div class="setup-panel">
     <span>全班人數：<input type="number" id="numInput" value="32" style="width: 45px;"></span>
@@ -64,17 +87,46 @@
     </div>
 </div>
 
+<div id="toast">這裡會顯示鼓勵的話！</div>
+
 <script>
-    let config = JSON.parse(localStorage.getItem('classConfig_v5')) || {
+    // 💡 老師可以隨時在這裡修改或增加你要說的話！
+    const individualMsgs = [
+        "你今天也很棒喔！🌟",
+        "太優秀了！繼續保持！👍",
+        "任務達成！給你一個讚！✨",
+        "好讚！老師有看到你的努力！👀",
+        "動作真快！太神啦！⚡",
+        "很棒！可以安心去休息囉！🎈"
+    ];
+
+    const classMsgs = [
+        "🎉 狂賀！全班都完成啦！六年級最棒！ 🎉",
+        "🏆 太神了！大家一起達成目標，老師覺得驕傲！ 🏆",
+        "✨ 完美的團隊合作！給全班拍拍手！ ✨"
+    ];
+
+    let config = JSON.parse(localStorage.getItem('classConfig_v6')) || {
         studentCount: 32,
         categories: [
-            { name: '作業訂正', deadline: '' },     // 預設空值代表不限時
+            { name: '作業訂正', deadline: '' },
             { name: '中午潔牙', deadline: '12:35' },
             { name: '桌面整潔', deadline: '12:40' }
         ]
     };
-    let data = JSON.parse(localStorage.getItem('classData_v5')) || {};
+    let data = JSON.parse(localStorage.getItem('classData_v6')) || {};
     let currentTabName = config.categories[0].name;
+
+    // 顯示鼓勵訊息的函數
+    function showToast(msg, isCelebrate = false) {
+        const toast = document.getElementById("toast");
+        toast.innerText = msg;
+        if (isCelebrate) toast.classList.add("celebrate");
+        else toast.classList.remove("celebrate");
+        
+        toast.classList.add("show");
+        setTimeout(() => { toast.classList.remove("show"); }, 3000); // 3秒後消失
+    }
 
     function init() {
         document.getElementById('numInput').value = config.studentCount;
@@ -95,10 +147,8 @@
             container.appendChild(btn);
         });
 
-        // 刷新設定區狀態
         const currentCat = config.categories.find(c => c.name === currentTabName);
         document.getElementById('settingTabName').innerText = currentTabName;
-        
         const isNoLimit = (currentCat.deadline === '');
         document.getElementById('noLimitCheck').checked = isNoLimit;
         document.getElementById('deadlineInput').disabled = isNoLimit;
@@ -119,16 +169,38 @@
         document.getElementById('statTotal').innerText = count;
         if (!data[currentTabName]) data[currentTabName] = [];
         let completed = 0;
+        
         for (let i = 1; i <= count; i++) {
             const btn = document.createElement('button');
             btn.className = `student-btn ${data[currentTabName].includes(i) ? 'completed' : ''}`;
             btn.innerText = i;
             if (data[currentTabName].includes(i)) completed++;
+            
             btn.onclick = () => {
                 const index = data[currentTabName].indexOf(i);
-                if (index === -1) data[currentTabName].push(i);
-                else data[currentTabName].splice(index, 1);
-                saveAll(); renderGrid();
+                let isChecking = false;
+                
+                if (index === -1) {
+                    data[currentTabName].push(i);
+                    isChecking = true; // 代表這次點擊是「完成任務」
+                } else {
+                    data[currentTabName].splice(index, 1); // 取消打勾
+                }
+                saveAll(); 
+                renderGrid();
+
+                // 🌟 觸發鼓勵訊息的邏輯 🌟
+                if (isChecking) {
+                    if (data[currentTabName].length === count) {
+                        // 全班完成
+                        const randomClassMsg = classMsgs[Math.floor(Math.random() * classMsgs.length)];
+                        showToast(randomClassMsg, true);
+                    } else {
+                        // 個人完成
+                        const randomIndMsg = individualMsgs[Math.floor(Math.random() * individualMsgs.length)];
+                        showToast(`${i}號同學，${randomIndMsg}`);
+                    }
+                }
             };
             grid.appendChild(btn);
         }
@@ -139,22 +211,18 @@
     function refreshUI() {
         const now = new Date();
         document.getElementById('currentTime').innerText = now.toTimeString().split(' ')[0];
-        
         const currentCat = config.categories.find(c => c.name === currentTabName);
         const grid = document.getElementById('grid');
         const label = document.getElementById('statusLabel');
         
         if (currentCat.deadline === '') {
-            // 不限時的狀態
             grid.classList.remove('is-locked');
             label.innerText = "不限時開放";
             label.style.background = "#e3f2fd"; label.style.color = "#1565c0";
         } else {
-            // 有時間限制的狀態
             const [h, m] = currentCat.deadline.split(':');
             const deadlineDate = new Date();
             deadlineDate.setHours(h, m, 0);
-            
             if (now > deadlineDate) {
                 grid.classList.add('is-locked');
                 label.innerText = "已截止";
@@ -170,33 +238,23 @@
     function toggleNoLimit() {
         const isChecked = document.getElementById('noLimitCheck').checked;
         const currentCat = config.categories.find(c => c.name === currentTabName);
-        if (isChecked) {
-            currentCat.deadline = '';
-        } else {
-            currentCat.deadline = '16:00'; // 取消打勾時，預設給一個放學時間
-        }
-        saveAll();
-        renderTabs();
-        refreshUI();
+        if (isChecked) currentCat.deadline = '';
+        else currentCat.deadline = '16:00'; 
+        saveAll(); renderTabs(); refreshUI();
     }
 
     function updateTabDeadline() {
         if (document.getElementById('noLimitCheck').checked) return;
-        const newTime = document.getElementById('deadlineInput').value;
         const currentCat = config.categories.find(c => c.name === currentTabName);
-        currentCat.deadline = newTime;
-        saveAll();
-        renderTabs();
-        refreshUI();
+        currentCat.deadline = document.getElementById('deadlineInput').value;
+        saveAll(); renderTabs(); refreshUI();
     }
 
     function addNewCategory() {
         const name = document.getElementById('tabInput').value.trim();
         if (name && !config.categories.find(c => c.name === name)) {
-            config.categories.push({ name: name, deadline: '' }); // 新增的預設不限時
-            saveAll();
-            document.getElementById('tabInput').value = '';
-            renderTabs();
+            config.categories.push({ name: name, deadline: '' });
+            saveAll(); document.getElementById('tabInput').value = ''; renderTabs();
         }
     }
 
@@ -207,8 +265,8 @@
     }
 
     function saveAll() {
-        localStorage.setItem('classConfig_v5', JSON.stringify(config));
-        localStorage.setItem('classData_v5', JSON.stringify(data));
+        localStorage.setItem('classConfig_v6', JSON.stringify(config));
+        localStorage.setItem('classData_v6', JSON.stringify(data));
     }
 
     init();
