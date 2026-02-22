@@ -16,7 +16,7 @@
         .timer-zone { background: #fdfaf0; border: 2px solid var(--primary); padding: 8px 20px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; font-weight: bold; }
         .is-locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); } 
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; align-items: center; }
         .tab-btn { padding: 10px 20px; border: 2px solid var(--border); border-radius: 50px; background: white; cursor: pointer; color: var(--primary); font-weight: 600; white-space: nowrap; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
@@ -27,8 +27,9 @@
         .info-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: #fafaf5; padding: 15px 25px; border-radius: 12px; border: 1px solid #eee; }
         input, select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
         .btn-action { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .btn-delete { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 10px; transition: 0.2s; }
+        .btn-delete:hover { background: #b71c1c; }
 
-        /* 🌟 彈出鼓勵訊息的樣式 🌟 */
         #toast {
             visibility: hidden;
             min-width: 250px;
@@ -66,6 +67,7 @@
         <label style="cursor: pointer; font-weight: bold; margin-left: 5px;">
             <input type="checkbox" id="noLimitCheck" onchange="toggleNoLimit()"> 不限時
         </label>
+        <button class="btn-delete" onclick="deleteCurrentCategory()">🗑️ 刪除此板塊</button>
     </span>
 </div>
 
@@ -90,7 +92,6 @@
 <div id="toast">這裡會顯示鼓勵的話！</div>
 
 <script>
-    // 💡 老師可以隨時在這裡修改或增加你要說的話！
     const individualMsgs = [
         "你今天也很棒喔！🌟",
         "太優秀了！繼續保持！👍",
@@ -101,23 +102,22 @@
     ];
 
     const classMsgs = [
-        "🎉 狂賀！全班都完成啦！今天的603超棒！ 🎉",
+        "🎉 狂賀！全班都完成啦！今天的你們超棒！ 🎉",
         "🏆 太神了！大家一起達成目標，老師覺得驕傲！ 🏆",
         "✨ 完美的團隊合作！給全班拍拍手！ ✨"
     ];
 
-    let config = JSON.parse(localStorage.getItem('classConfig_v6')) || {
+    // 更新金庫名稱到 v9，這樣你一打開就會是乾淨的「只有潔牙和桌面整潔」版本
+    let config = JSON.parse(localStorage.getItem('classConfig_v9')) || {
         studentCount: 32,
         categories: [
-            { name: '作業訂正', deadline: '' },
             { name: '中午潔牙', deadline: '12:35' },
             { name: '桌面整潔', deadline: '12:40' }
         ]
     };
-    let data = JSON.parse(localStorage.getItem('classData_v6')) || {};
+    let data = JSON.parse(localStorage.getItem('classData_v9')) || {};
     let currentTabName = config.categories[0].name;
 
-    // 顯示鼓勵訊息的函數
     function showToast(msg, isCelebrate = false) {
         const toast = document.getElementById("toast");
         toast.innerText = msg;
@@ -125,7 +125,7 @@
         else toast.classList.remove("celebrate");
         
         toast.classList.add("show");
-        setTimeout(() => { toast.classList.remove("show"); }, 3000); // 3秒後消失
+        setTimeout(() => { toast.classList.remove("show"); }, 3000); 
     }
 
     function init() {
@@ -182,21 +182,18 @@
                 
                 if (index === -1) {
                     data[currentTabName].push(i);
-                    isChecking = true; // 代表這次點擊是「完成任務」
+                    isChecking = true; 
                 } else {
-                    data[currentTabName].splice(index, 1); // 取消打勾
+                    data[currentTabName].splice(index, 1); 
                 }
                 saveAll(); 
                 renderGrid();
 
-                // 🌟 觸發鼓勵訊息的邏輯（已修改為純鼓勵版本） 🌟
                 if (isChecking) {
                     if (data[currentTabName].length === count) {
-                        // 全班完成
                         const randomClassMsg = classMsgs[Math.floor(Math.random() * classMsgs.length)];
                         showToast(randomClassMsg, true);
                     } else {
-                        // 個人完成
                         const randomIndMsg = individualMsgs[Math.floor(Math.random() * individualMsgs.length)];
                         showToast(randomIndMsg);
                     }
@@ -258,6 +255,22 @@
         }
     }
 
+    function deleteCurrentCategory() {
+        if (config.categories.length <= 1) {
+            alert("至少要保留一個板塊喔！不能全部刪光光～");
+            return;
+        }
+        
+        if (confirm(`確定要刪除「${currentTabName}」板塊嗎？裡面的打勾紀錄也會不見喔！`)) {
+            config.categories = config.categories.filter(c => c.name !== currentTabName);
+            delete data[currentTabName];
+            currentTabName = config.categories[0].name;
+            saveAll(); 
+            renderTabs(); 
+            renderGrid();
+        }
+    }
+
     function clearCurrent() {
         if (confirm(`確定清空「${currentTabName}」今日紀錄？`)) {
             data[currentTabName] = []; saveAll(); renderGrid();
@@ -265,8 +278,8 @@
     }
 
     function saveAll() {
-        localStorage.setItem('classConfig_v6', JSON.stringify(config));
-        localStorage.setItem('classData_v6', JSON.stringify(data));
+        localStorage.setItem('classConfig_v9', JSON.stringify(config));
+        localStorage.setItem('classData_v9', JSON.stringify(data));
     }
 
     init();
