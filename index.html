@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級管理系統 - 彈性時間版</title>
+    <style>
+        :root {
+            --primary: #8d6e63; --success: #6b8e23; --bg: #f5f5dc;
+            --card: #ffffff; --text: #4e342e; --border: #d7ccc8; --danger: #d84315;
+        }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); display: flex; flex-direction: column; align-items: center; }
+        .setup-panel { background: #e9e5d3; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; border: 1px solid var(--border); width: 100%; max-width: 900px; font-size: 14px; justify-content: center; flex-wrap: wrap; }
+        .main-card { background: var(--card); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 900px; box-sizing: border-box; }
+        
+        .timer-zone { background: #fdfaf0; border: 2px solid var(--primary); padding: 8px 20px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; font-weight: bold; }
+        .is-locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); } 
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: 2px solid var(--border); border-radius: 50px; background: white; cursor: pointer; color: var(--primary); font-weight: 600; white-space: nowrap; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; transition: 0.5s; }
+        .student-btn { aspect-ratio: 1/1; border: 2px solid var(--border); background: white; border-radius: 15px; cursor: pointer; font-size: 26px; font-weight: bold; color: var(--text); position: relative; display: flex; align-items: center; justify-content: center; }
+        .student-btn.completed { background: var(--success); color: white; border-color: transparent; }
+        
+        .info-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: #fafaf5; padding: 15px 25px; border-radius: 12px; border: 1px solid #eee; }
+        input, select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+        .btn-action { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="header"><h1>🌲 班級多功能追蹤系統</h1></div>
+
+<div class="setup-panel">
+    <span>全班人數：<input type="number" id="numInput" value="32" style="width: 45px;"></span>
+    <span>新增板塊：<input type="text" id="tabInput" placeholder="如：回條" style="width: 80px;"></span>
+    <button class="btn-action" onclick="addNewCategory()">新增</button>
+    <div style="border-left: 1px solid #ccc; height: 20px; margin: 0 10px;"></div>
+    <span>「<span id="settingTabName">當前板塊</span>」截止：
+        <input type="time" id="deadlineInput" onchange="updateTabDeadline()">
+        <label style="cursor: pointer; font-weight: bold; margin-left: 5px;">
+            <input type="checkbox" id="noLimitCheck" onchange="toggleNoLimit()"> 不限時
+        </label>
+    </span>
+</div>
+
+<div class="main-card">
+    <div style="text-align: center;">
+        <div class="timer-zone">
+            🕒 <span id="currentTime">00:00:00</span>
+            <span id="statusLabel" style="margin-left: 10px; padding: 2px 10px; border-radius: 10px; font-size: 14px;"></span>
+            <span id="deadlineText" style="font-size: 14px; color: var(--primary);"></span>
+        </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="info-bar">
+        <span>已完成：<strong id="statCount" style="color: var(--success); font-size: 28px;">0</strong> / <span id="statTotal">32</span></span>
+        <button onclick="clearCurrent()" style="color: var(--danger); background: none; border: none; cursor: pointer; font-size: 14px;">清空本頁紀錄</button>
+    </div>
+</div>
+
+<script>
+    let config = JSON.parse(localStorage.getItem('classConfig_v5')) || {
+        studentCount: 32,
+        categories: [
+            { name: '作業訂正', deadline: '' },     // 預設空值代表不限時
+            { name: '中午潔牙', deadline: '12:35' },
+            { name: '桌面整潔', deadline: '12:40' }
+        ]
+    };
+    let data = JSON.parse(localStorage.getItem('classData_v5')) || {};
+    let currentTabName = config.categories[0].name;
+
+    function init() {
+        document.getElementById('numInput').value = config.studentCount;
+        document.getElementById('numInput').onchange = (e) => { config.studentCount = e.target.value; saveAll(); renderGrid(); };
+        renderTabs();
+        renderGrid();
+        setInterval(refreshUI, 1000);
+    }
+
+    function renderTabs() {
+        const container = document.getElementById('tabs');
+        container.innerHTML = '';
+        config.categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${cat.name === currentTabName ? 'active' : ''}`;
+            btn.innerText = cat.name;
+            btn.onclick = () => { currentTabName = cat.name; renderTabs(); renderGrid(); };
+            container.appendChild(btn);
+        });
+
+        // 刷新設定區狀態
+        const currentCat = config.categories.find(c => c.name === currentTabName);
+        document.getElementById('settingTabName').innerText = currentTabName;
+        
+        const isNoLimit = (currentCat.deadline === '');
+        document.getElementById('noLimitCheck').checked = isNoLimit;
+        document.getElementById('deadlineInput').disabled = isNoLimit;
+        
+        if (isNoLimit) {
+            document.getElementById('deadlineInput').value = '';
+            document.getElementById('deadlineText').innerText = '(不限時)';
+        } else {
+            document.getElementById('deadlineInput').value = currentCat.deadline;
+            document.getElementById('deadlineText').innerText = `(截止：${currentCat.deadline})`;
+        }
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        const count = parseInt(config.studentCount);
+        document.getElementById('statTotal').innerText = count;
+        if (!data[currentTabName]) data[currentTabName] = [];
+        let completed = 0;
+        for (let i = 1; i <= count; i++) {
+            const btn = document.createElement('button');
+            btn.className = `student-btn ${data[currentTabName].includes(i) ? 'completed' : ''}`;
+            btn.innerText = i;
+            if (data[currentTabName].includes(i)) completed++;
+            btn.onclick = () => {
+                const index = data[currentTabName].indexOf(i);
+                if (index === -1) data[currentTabName].push(i);
+                else data[currentTabName].splice(index, 1);
+                saveAll(); renderGrid();
+            };
+            grid.appendChild(btn);
+        }
+        document.getElementById('statCount').innerText = completed;
+        refreshUI();
+    }
+
+    function refreshUI() {
+        const now = new Date();
+        document.getElementById('currentTime').innerText = now.toTimeString().split(' ')[0];
+        
+        const currentCat = config.categories.find(c => c.name === currentTabName);
+        const grid = document.getElementById('grid');
+        const label = document.getElementById('statusLabel');
+        
+        if (currentCat.deadline === '') {
+            // 不限時的狀態
+            grid.classList.remove('is-locked');
+            label.innerText = "不限時開放";
+            label.style.background = "#e3f2fd"; label.style.color = "#1565c0";
+        } else {
+            // 有時間限制的狀態
+            const [h, m] = currentCat.deadline.split(':');
+            const deadlineDate = new Date();
+            deadlineDate.setHours(h, m, 0);
+            
+            if (now > deadlineDate) {
+                grid.classList.add('is-locked');
+                label.innerText = "已截止";
+                label.style.background = "#ffcdd2"; label.style.color = "#c62828";
+            } else {
+                grid.classList.remove('is-locked');
+                label.innerText = "開放中";
+                label.style.background = "#c8e6c9"; label.style.color = "#2e7d32";
+            }
+        }
+    }
+
+    function toggleNoLimit() {
+        const isChecked = document.getElementById('noLimitCheck').checked;
+        const currentCat = config.categories.find(c => c.name === currentTabName);
+        if (isChecked) {
+            currentCat.deadline = '';
+        } else {
+            currentCat.deadline = '16:00'; // 取消打勾時，預設給一個放學時間
+        }
+        saveAll();
+        renderTabs();
+        refreshUI();
+    }
+
+    function updateTabDeadline() {
+        if (document.getElementById('noLimitCheck').checked) return;
+        const newTime = document.getElementById('deadlineInput').value;
+        const currentCat = config.categories.find(c => c.name === currentTabName);
+        currentCat.deadline = newTime;
+        saveAll();
+        renderTabs();
+        refreshUI();
+    }
+
+    function addNewCategory() {
+        const name = document.getElementById('tabInput').value.trim();
+        if (name && !config.categories.find(c => c.name === name)) {
+            config.categories.push({ name: name, deadline: '' }); // 新增的預設不限時
+            saveAll();
+            document.getElementById('tabInput').value = '';
+            renderTabs();
+        }
+    }
+
+    function clearCurrent() {
+        if (confirm(`確定清空「${currentTabName}」今日紀錄？`)) {
+            data[currentTabName] = []; saveAll(); renderGrid();
+        }
+    }
+
+    function saveAll() {
+        localStorage.setItem('classConfig_v5', JSON.stringify(config));
+        localStorage.setItem('classData_v5', JSON.stringify(data));
+    }
+
+    init();
+</script>
+</body>
+</html>
