@@ -10,10 +10,17 @@
             --card: #ffffff; --text: #4e342e; --border: #d7ccc8; --danger: #d84315;
         }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); display: flex; flex-direction: column; align-items: center; }
-        .setup-panel { background: #e9e5d3; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; border: 1px solid var(--border); width: 100%; max-width: 900px; font-size: 14px; justify-content: center; flex-wrap: wrap; }
-        .main-card { background: var(--card); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 900px; box-sizing: border-box; }
+        .setup-panel { background: #e9e5d3; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; border: 1px solid var(--border); width: 100%; max-width: 950px; font-size: 14px; justify-content: center; flex-wrap: wrap; }
+        .main-card { background: var(--card); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 950px; box-sizing: border-box; }
         
         .timer-zone { background: #fdfaf0; border: 2px solid var(--primary); padding: 8px 20px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; font-weight: bold; }
+        
+        /* 公告板樣式 */
+        .announce-board { width: 100%; max-width: 800px; margin: 0 auto 25px auto; text-align: center; font-size: 20px; font-weight: bold; background: #fdfaf0; padding: 12px; border-radius: 12px; box-sizing: border-box; color: var(--text); }
+        #announceDisplay { border: 2px dashed var(--primary); min-height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        #announceDisplay:hover { background: #f5ecd8; }
+        #announceInput { border: 2px solid var(--primary); outline: none; }
+        
         .is-locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); } 
         
         .tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; align-items: center; }
@@ -21,48 +28,47 @@
         .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; transition: 0.5s; }
-        .student-btn { aspect-ratio: 1/1; border: 2px solid var(--border); background: white; border-radius: 15px; cursor: pointer; font-size: 26px; font-weight: bold; color: var(--text); position: relative; display: flex; align-items: center; justify-content: center; }
+        .student-btn { aspect-ratio: 1/1; border: 2px solid var(--border); background: white; border-radius: 15px; cursor: pointer; font-size: 26px; font-weight: bold; color: var(--text); position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .student-btn:active { transform: scale(0.95); }
         .student-btn.completed { background: var(--success); color: white; border-color: transparent; }
+        
+        /* 空號專用樣式 */
+        .student-btn.vacant { background: #f0f0f0; border: 2px dashed #cccccc; color: #bbbbbb; cursor: not-allowed; }
+        .student-btn.vacant:active { transform: none; }
         
         .info-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: #fafaf5; padding: 15px 25px; border-radius: 12px; border: 1px solid #eee; }
         input, select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
-        .btn-action { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .btn-action { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-export { background: #455a64; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: 10px; }
         .btn-delete { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 10px; transition: 0.2s; }
         .btn-delete:hover { background: #b71c1c; }
 
         #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: var(--success);
-            color: #fff;
-            text-align: center;
-            border-radius: 50px;
-            padding: 12px 24px;
-            position: fixed;
-            z-index: 1000;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.4s, bottom 0.4s;
+            visibility: hidden; min-width: 250px; background-color: var(--success); color: #fff;
+            text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed;
+            z-index: 1000; bottom: 30px; left: 50%; transform: translateX(-50%); font-size: 20px;
+            font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.4s, bottom 0.4s;
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
         #toast.celebrate { background-color: #ff9800; font-size: 26px; padding: 20px 40px; border: 3px solid #fff; }
+
+        /* 煙火動畫 CSS */
+        .confetti { position: fixed; top: -50px; z-index: 9999; font-size: 35px; animation: fall linear forwards; pointer-events: none; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
     </style>
 </head>
 <body>
 
-<div class="header"><h1>💪 每日任務清單</h1></div>
+<div class="header"><h1>💪 每日任務管理系統</h1></div>
 
 <div class="setup-panel">
     <span>全班人數：<input type="number" id="numInput" value="32" style="width: 45px;"></span>
+    <span style="margin-left: 5px;">請假/空號：<input type="text" id="vacantInput" value="" placeholder="如: 14,15" style="width: 100px;" onchange="updateVacant()"></span>
+    <div style="border-left: 1px solid #ccc; height: 20px; margin: 0 5px;"></div>
     <span>新增板塊：<input type="text" id="tabInput" placeholder="如：回條" style="width: 80px;"></span>
     <button class="btn-action" onclick="addNewCategory()">新增</button>
-    <div style="border-left: 1px solid #ccc; height: 20px; margin: 0 10px;"></div>
-    <span>「<span id="settingTabName">當前板塊</span>」截止：
+    <div style="border-left: 1px solid #ccc; height: 20px; margin: 0 5px;"></div>
+    <span>「<span id="settingTabName" style="font-weight:bold; color:var(--danger);">當前</span>」截止：
         <input type="time" id="deadlineInput" onchange="updateTabDeadline()">
         <label style="cursor: pointer; font-weight: bold; margin-left: 5px;">
             <input type="checkbox" id="noLimitCheck" onchange="toggleNoLimit()"> 不限時
@@ -72,12 +78,17 @@
 </div>
 
 <div class="main-card">
-    <div style="text-align: center;">
+    <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
         <div class="timer-zone">
+            📅 <span id="currentDate" style="margin-right: 15px; color: var(--primary);"></span>
             🕒 <span id="currentTime">00:00:00</span>
             <span id="statusLabel" style="margin-left: 10px; padding: 2px 10px; border-radius: 10px; font-size: 14px;"></span>
-            <span id="deadlineText" style="font-size: 14px; color: var(--primary);"></span>
+            <span id="deadlineText" style="font-size: 14px; color: var(--danger);"></span>
         </div>
+        
+        <!-- 切換式公告板 -->
+        <div id="announceDisplay" class="announce-board" onclick="editAnnounce()"></div>
+        <input type="text" id="announceInput" class="announce-board" style="display: none;" onblur="saveAnnounce()" onkeypress="handleAnnounceEnter(event)">
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -85,7 +96,10 @@
 
     <div class="info-bar">
         <span>已完成：<strong id="statCount" style="color: var(--success); font-size: 28px;">0</strong> / <span id="statTotal">32</span></span>
-        <button onclick="clearCurrent()" style="color: var(--danger); background: none; border: none; cursor: pointer; font-size: 14px;">清空本頁紀錄</button>
+        <div>
+            <button class="btn-export" onclick="exportLog()">💾 下載今日紀錄</button>
+            <button onclick="clearCurrent()" style="color: var(--danger); background: none; border: 1px solid var(--danger); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 10px;">清空本頁紀錄</button>
+        </div>
     </div>
 </div>
 
@@ -107,34 +121,87 @@
         "✨ 完美的團隊合作！給全班拍拍手！ ✨"
     ];
 
-    // 更新金庫名稱到 v9，這樣你一打開就會是乾淨的「只有潔牙和桌面整潔」版本
-    let config = JSON.parse(localStorage.getItem('classConfig_v9')) || {
+    // 使用全新的記憶區塊避免跟舊版本衝突
+    let config = JSON.parse(localStorage.getItem('classConfig_senior_v1')) || {
         studentCount: 32,
+        vacant: "",
+        announcement: "",
         categories: [
             { name: '中午潔牙', deadline: '12:35' },
             { name: '桌面整潔', deadline: '12:40' }
         ]
     };
-    let data = JSON.parse(localStorage.getItem('classData_v9')) || {};
+    let data = JSON.parse(localStorage.getItem('classData_senior_v1')) || {};
     let currentTabName = config.categories[0].name;
 
     function showToast(msg, isCelebrate = false) {
         const toast = document.getElementById("toast");
         toast.innerText = msg;
-        if (isCelebrate) toast.classList.add("celebrate");
-        else toast.classList.remove("celebrate");
-        
+        if (isCelebrate) { 
+            toast.classList.add("celebrate"); 
+            fireConfetti();
+        } else { 
+            toast.classList.remove("celebrate"); 
+        }
         toast.classList.add("show");
         setTimeout(() => { toast.classList.remove("show"); }, 3000); 
     }
 
+    function fireConfetti() {
+        const emojis = ['🎆', '🎊', '🎉', '✨', '🌟', '💯'];
+        for(let i = 0; i < 40; i++) {
+            let conf = document.createElement('div');
+            conf.className = 'confetti';
+            conf.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            conf.style.left = Math.random() * 100 + 'vw';
+            conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            document.body.appendChild(conf);
+            setTimeout(() => conf.remove(), 5000);
+        }
+    }
+
     function init() {
         document.getElementById('numInput').value = config.studentCount;
+        document.getElementById('vacantInput').value = config.vacant;
+        
         document.getElementById('numInput').onchange = (e) => { config.studentCount = e.target.value; saveAll(); renderGrid(); };
-        renderTabs();
-        renderGrid();
-        setInterval(refreshUI, 1000);
+        renderTabs(); renderGrid(); updateAnnounceDisplay(); setInterval(refreshUI, 1000);
     }
+
+    // 公告板邏輯
+    function editAnnounce() {
+        document.getElementById('announceDisplay').style.display = 'none';
+        let input = document.getElementById('announceInput');
+        input.style.display = 'block';
+        input.value = config.announcement;
+        input.focus();
+    }
+
+    function saveAnnounce() {
+        config.announcement = document.getElementById('announceInput').value.trim();
+        document.getElementById('announceInput').style.display = 'none';
+        document.getElementById('announceDisplay').style.display = 'flex';
+        updateAnnounceDisplay();
+        saveAll();
+    }
+
+    function handleAnnounceEnter(e) {
+        if(e.key === 'Enter') { saveAnnounce(); }
+    }
+
+    function updateAnnounceDisplay() {
+        let display = document.getElementById('announceDisplay');
+        if(!config.announcement) {
+            display.innerHTML = "📢 點擊此處輸入班級公告（例：值日生：1, 2號 / 第三組抬餐）";
+            display.style.color = '#9e9e9e';
+        } else {
+            display.innerHTML = '📢 ' + config.announcement;
+            display.style.color = 'var(--text)';
+        }
+    }
+
+    function updateVacant() { config.vacant = document.getElementById('vacantInput').value; saveAll(); renderGrid(); }
+    function getVacantList() { return config.vacant.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)); }
 
     function renderTabs() {
         const container = document.getElementById('tabs');
@@ -166,39 +233,40 @@
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
         const count = parseInt(config.studentCount);
-        document.getElementById('statTotal').innerText = count;
+        const vacantList = getVacantList();
+        const activeTotal = count - vacantList.length;
+        document.getElementById('statTotal').innerText = activeTotal > 0 ? activeTotal : 0;
+        
         if (!data[currentTabName]) data[currentTabName] = [];
         let completed = 0;
         
         for (let i = 1; i <= count; i++) {
             const btn = document.createElement('button');
-            btn.className = `student-btn ${data[currentTabName].includes(i) ? 'completed' : ''}`;
-            btn.innerText = i;
-            if (data[currentTabName].includes(i)) completed++;
-            
-            btn.onclick = () => {
-                const index = data[currentTabName].indexOf(i);
-                let isChecking = false;
+            if (vacantList.includes(i)) {
+                btn.className = 'student-btn vacant';
+                btn.innerText = i;
+            } else {
+                btn.className = `student-btn ${data[currentTabName].includes(i) ? 'completed' : ''}`;
+                btn.innerText = i;
+                if (data[currentTabName].includes(i)) completed++;
                 
-                if (index === -1) {
-                    data[currentTabName].push(i);
-                    isChecking = true; 
-                } else {
-                    data[currentTabName].splice(index, 1); 
-                }
-                saveAll(); 
-                renderGrid();
+                btn.onclick = () => {
+                    const index = data[currentTabName].indexOf(i);
+                    let isChecking = false;
+                    
+                    if (index === -1) { data[currentTabName].push(i); isChecking = true; } 
+                    else { data[currentTabName].splice(index, 1); }
+                    saveAll(); renderGrid();
 
-                if (isChecking) {
-                    if (data[currentTabName].length === count) {
-                        const randomClassMsg = classMsgs[Math.floor(Math.random() * classMsgs.length)];
-                        showToast(randomClassMsg, true);
-                    } else {
-                        const randomIndMsg = individualMsgs[Math.floor(Math.random() * individualMsgs.length)];
-                        showToast(randomIndMsg);
+                    if (isChecking) {
+                        if (data[currentTabName].length === activeTotal) {
+                            showToast(classMsgs[Math.floor(Math.random() * classMsgs.length)], true);
+                        } else {
+                            showToast(individualMsgs[Math.floor(Math.random() * individualMsgs.length)]);
+                        }
                     }
-                }
-            };
+                };
+            }
             grid.appendChild(btn);
         }
         document.getElementById('statCount').innerText = completed;
@@ -207,7 +275,10 @@
 
     function refreshUI() {
         const now = new Date();
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        document.getElementById('currentDate').innerText = `${now.getMonth() + 1}月${now.getDate()}日 (${days[now.getDay()]})`;
         document.getElementById('currentTime').innerText = now.toTimeString().split(' ')[0];
+        
         const currentCat = config.categories.find(c => c.name === currentTabName);
         const grid = document.getElementById('grid');
         const label = document.getElementById('statusLabel');
@@ -260,14 +331,11 @@
             alert("至少要保留一個板塊喔！不能全部刪光光～");
             return;
         }
-        
         if (confirm(`確定要刪除「${currentTabName}」板塊嗎？裡面的打勾紀錄也會不見喔！`)) {
             config.categories = config.categories.filter(c => c.name !== currentTabName);
             delete data[currentTabName];
             currentTabName = config.categories[0].name;
-            saveAll(); 
-            renderTabs(); 
-            renderGrid();
+            saveAll(); renderTabs(); renderGrid();
         }
     }
 
@@ -277,9 +345,42 @@
         }
     }
 
+    function exportLog() {
+        let dateStr = new Date().toLocaleDateString('zh-TW');
+        let vacantList = getVacantList();
+        vacantList.sort((a,b) => a-b);
+        let vacantText = vacantList.length > 0 ? vacantList.join(', ') : '無';
+        
+        let text = `【每日任務管理系統 - 班級紀錄】\n📅 日期：${dateStr}\n📢 今日公告：${config.announcement || '無'}\n🚫 請假/空號：${vacantText}\n\n`;
+        
+        let totalCount = parseInt(config.studentCount);
+
+        config.categories.forEach(cat => {
+            let completed = data[cat.name] || [];
+            completed.sort((a,b) => a-b); 
+            
+            let incomplete = [];
+            for (let i = 1; i <= totalCount; i++) {
+                if (!completed.includes(i) && !vacantList.includes(i)) {
+                    incomplete.push(i);
+                }
+            }
+
+            text += `✅ 任務：${cat.name}\n`;
+            text += `   ⭕ 完成 (${completed.length}人)：${completed.length > 0 ? completed.join(', ') : '無'}\n`;
+            text += `   ❌ 未完成 (${incomplete.length}人)：${incomplete.length > 0 ? incomplete.join(', ') : '無'}\n\n`;
+        });
+
+        let blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `任務紀錄_${new Date().toISOString().split('T')[0]}.txt`;
+        link.click();
+    }
+
     function saveAll() {
-        localStorage.setItem('classConfig_v9', JSON.stringify(config));
-        localStorage.setItem('classData_v9', JSON.stringify(data));
+        localStorage.setItem('classConfig_senior_v1', JSON.stringify(config));
+        localStorage.setItem('classData_senior_v1', JSON.stringify(data));
     }
 
     init();
